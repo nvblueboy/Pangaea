@@ -1,0 +1,36 @@
+body {
+    margin:0;
+}
+
+.gameCanvas {
+    border: 1px solid #000;
+}
+
+.modeButtons {
+    font-size:0;
+}
+
+
+.modeButtons button {
+    border: 1px solid #000;
+    background-color: #0df;
+    font-size:14px;
+    width: 70px;
+    height: 40px;
+    border-right:0;
+}
+
+.modeButtons button.active{
+    background-color:#057;
+}
+
+.modeButtons button:first-child {
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+}
+
+.modeButtons button:last-child {
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    border-right:1px solid #000;
+}

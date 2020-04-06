@@ -1,0 +1,29 @@
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="./static/style.css">
+    </head>
+
+    <body>
+        <canvas width="100%" height="100%" id="gameCanvas" class="gameCanvas">
+
+        </canvas>
+
+        <div class="controlPanel">
+            <button id="exportToSvg">Export</button>
+            <button id="stageButton">Next Stage</button>
+            <button id="lockButton">Lock Turn</button>
+
+            <div class="modeButtons">
+                <button id="modeDraw" class="modeButton">Draw</button>
+                <button id="modeText" class="modeButton">Text</button>
+                <button id="modeMove" class="modeButton">Move</button>
+            </div>
+
+            <button id="finishTurn">Finish Turn</button>
+        </div>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="./static/fabric.min.js"></script>
+        <script src="./static/pangaea.js"></script>
+    </body>
+</html>
