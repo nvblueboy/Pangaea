@@ -1,29 +1,96 @@
 <html>
-    <head>
-        <link rel="stylesheet" type="text/css" href="./static/style.css">
-    </head>
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    
+    <link rel="stylesheet" type="text/css" href="./static/style.css">
+    
+</head>
 
-    <body>
-        <canvas width="100%" height="100%" id="gameCanvas" class="gameCanvas">
+<body>
+    <div id="myModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Join/Create A Game</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-explanation">
+                        Type in the name of the game you would like to join. If it does not exist, it will be created.
+                    </div>
+                    <div class="modal-entry">
+                        <form id="entryForm" class="needs-validation" novalidate>
+                            <div class="form-group">
+                                <label for="gameNameInput">Game Name</label>
+                                <input type="text" class="form-control was-validated" id="gameNameInput" placeholder="Enter Game Name (e.g. 'ThePartyCruise')" required="true"/>
+                                <div class="invalid-feedback">
+                                    Please enter a game name.
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="playerNameInput">Player Name</label>
+                                <input type="text" class="form-control" id="playerNameInput" placeholder="Enter Player Name (e.g. 'Dylan')" required="true"/>
+                                <div class="invalid-feedback">
+                                    Please enter a player name.
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="colorInput">Color</label>
+                                <input type="color" class="form-control" id="colorInput"/>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="modalSubmit" class="btn btn-primary">Start</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <canvas width="100%" height="100%" id="gameCanvas" class="gameCanvas">
+    </canvas>
+    
+    <div class="controlPanel">
+        
+        <div class="innerControlPanel">
+            
+            <div class="playingControls" id="playingControls">
+                <div class="modeButtons">
+                    <button id="modeDraw" class="modeButton" disable="true">Draw</button>
+                    <button id="modeText" class="modeButton" disable="true">Text</button>
+                    <button id="modeMove" class="modeButton">Move</button>
+                </div>
 
-        </canvas>
+                
+                <button id="finishTurn" class="commandButton">Finish Turn</button>
 
-        <div class="controlPanel">
-            <button id="exportToSvg">Export</button>
-            <button id="stageButton">Next Stage</button>
-            <button id="lockButton">Lock Turn</button>
-
-            <div class="modeButtons">
-                <button id="modeDraw" class="modeButton">Draw</button>
-                <button id="modeText" class="modeButton">Text</button>
-                <button id="modeMove" class="modeButton">Move</button>
+                <button id="throwMarker" class="commandButton">Throw Marker</button>
             </div>
 
-            <button id="finishTurn">Finish Turn</button>
+            <div class="waitingMessage" id="waitingMessage">
+                Waiting for your turn!
+            </div>
         </div>
 
-        <script src="/socket.io/socket.io.js"></script>
-        <script src="./static/fabric.min.js"></script>
-        <script src="./static/pangaea.js"></script>
-    </body>
+        
+        
+    </div>
+
+    <div class="chatWindow">
+        <div class="chatMessageContainer" id="chatContainer">
+            
+        </div>
+        <div class="chatInput">
+            <input type="text" id="chatInput" class="form-control chatInput" placeholder="Chat..."/>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="./static/fabric.min.js"></script>
+    <script src="./static/pangaea.js"></script>
+</body>
 </html>

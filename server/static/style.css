@@ -10,10 +10,31 @@ body {
     font-size:0;
 }
 
+.controlPanel {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: calc(100% - 300px);
+    display: flex;
+    justify-content: center;
+}
+
+.innerControlPanel {
+    display: flex;
+    padding: 20px;
+    border-top-left-radius:10px;
+    border-top-right-radius:10px;
+    background-color: #00000050;
+}
+
+.playingControls {
+    display:flex;
+}
 
 .modeButtons button {
     border: 1px solid #000;
-    background-color: #0df;
+    background-color: #FF1A13;
+    color:black;
     font-size:14px;
     width: 70px;
     height: 40px;
@@ -21,7 +42,18 @@ body {
 }
 
 .modeButtons button.active{
-    background-color:#057;
+    background-color:#B3231E;
+    color:white;
+}
+
+.commandButton {
+    margin-left:10px;
+    border: 1px solid #000;
+    background-color:#FF1A13;
+    font-size:14px;
+    width:100px;
+    height:40px;
+    border-radius:20px;
 }
 
 .modeButtons button:first-child {
@@ -34,3 +66,39 @@ body {
     border-bottom-right-radius: 20px;
     border-right:1px solid #000;
 }
+
+/* Chat shenanigans */
+.chatWindow {
+    width:300px;
+    height:100vh;
+    position:absolute;
+    right:0;
+    bottom:0;
+    border:1px solid #333;
+
+}
+
+.chatInput {
+    position:absolute;
+    right:0;
+    bottom:0;
+    width:298px
+}
+
+.chatWindowRow {
+    padding:3px;
+}
+
+.chatWindowRow:nth-child(even) {
+    background-color: #eee;
+}
+
+.chatMessageSender {
+    font-weight:600;
+}
+
+.chatMessageContainer {
+    overflow-y: scroll;
+    height: 100%;
+}
+

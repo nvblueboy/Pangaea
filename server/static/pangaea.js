@@ -1,79 +1,147 @@
-var $ = function(id){return document.getElementById(id)};
-
 // Object Tracking
 var existingObjects = [];
 var newObjects = [];
 var textObject;
+var markerObject;
 
 //Operation Variables
 var stage = "waiting";
-var mode = "drawing";
+var mode = "moving";
 
 var playerId = 0;
-var playerName = 'Dylan';
-var gameName = 'DylanBowman';
+var playerName;
+var gameName;
+var color; 
 
 
-var canvasElement = $("gameCanvas");
-canvasElement.width  = window.innerWidth;
-canvasElement.height = window.innerHeight-100;
+function setCanvasSize() {
+    //Lay out the canvas.
+    var canvasElement = $("#gameCanvas").get(0);
+    canvasElement.width  = window.innerWidth-300;
+    canvasElement.height = window.innerHeight;
+}
+
+//Set the initial amount
+setCanvasSize();
 
 
-//Server code
+/////////////////////////////////////////
+//
+//      Modal/Entry Code
+//
+/////////////////////////////////////////
+
+
+var getUrlVars = function() {
+    var vars = {};
+    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+        vars[key] = value;
+    });
+    return vars;
+}
+
+$("#modalSubmit").click(function() {
+    var form = $("#entryForm");
+    if (form.get(0).checkValidity() === true) {
+        //Get data from the form.
+        gameName = $("#gameNameInput").val();
+        playerName = $("#playerNameInput").val();
+        color = $("#colorInput").val();
+        
+        //Join the game (emitting to the server)
+        joinGame(gameName, playerName);
+        
+        if (canvas.freeDrawingBrush) {
+            canvas.freeDrawingBrush.color = color;
+            canvas.freeDrawingBrush.width = 5;
+        }
+        
+        //Hide the modal to start the user in the
+        $("#myModal").modal('hide');
+    } else {
+        form.addClass("was-validated");
+    }
+});
+
+
+
+/////////////////////////////////////////
+//
+//      Server Code
+//
+/////////////////////////////////////////
 var socket = io();
 socket.on('message', function(data) {
-  console.log(data);
+    console.log(data);
 });
 
 //Get Socket/Player ID From Server.
 socket.emit('new player');
 
-socket.on('socketId', function(data) {
-   playerId = data;
-   console.log(playerId); 
 
-   //TODO: Make it so you can actually choose a game to join.
-   socket.emit('join game', {
+
+var joinGame = function(gameToJoin, newPlayerName) {
+    gameName = gameToJoin;
+    playerName = newPlayerName;
+    socket.emit('join game', {
         gameName: gameName,
         player : {
             id:playerId,
             name:playerName
         }
-   });
-});
+    });
+}
+
+
 
 socket.on('newMove', function(data) {
+    console.log("Received: newMove");
     console.log(data);
     if (data.nextPlayer == playerId) {
-        stage = "playing";       
+        stage = "playing";
+        //Play sound? Notification? 
+        var text = 'It is your turn in Pizza Box!';
+        var notification = new Notification('Your Turn', { body: text });   
     } else {
         stage = "waiting";
     }
     updateButtonStates();
     updateOperation();
-
-    //Load the lines into place.
-    fabric.util.enlivenObjects(data.objects, function(objects) {
-        var origRenderOnAddRemove = canvas.renderOnAddRemove;
-        canvas.renderOnAddRemove = false;
     
-        objects.forEach(function(o) {
-            canvas.add(o);
+    //Load the lines into place.
+    if (data.playerId != playerId) {
+        fabric.util.enlivenObjects(data.objects, function(objects) {
+            var origRenderOnAddRemove = canvas.renderOnAddRemove;
+            canvas.renderOnAddRemove = false;
+            
+            objects.forEach(function(o) {
+                lockObject(o, true);
+                existingObjects.push(o);
+                canvas.add(o);
+            });
+            canvas.renderOnAddRemove = origRenderOnAddRemove;
+            canvas.renderAll();
         });
-        canvas.renderOnAddRemove = origRenderOnAddRemove;
-        canvas.renderAll();
-    });
+    }
+    
     
     // canvas.add(data.text);
 });
 
 socket.on('catch up', function(data) {
+    console.log("Received: Catch Up");
     //Load the lines into place.
+    stage = "waiting";
+    
+    updateButtonStates();
+    updateOperation();
     fabric.util.enlivenObjects(data, function(objects) {
         var origRenderOnAddRemove = canvas.renderOnAddRemove;
         canvas.renderOnAddRemove = false;
-    
+        
         objects.forEach(function(o) {
+            lockObject(o, true);
+            existingObjects.push(o);
             canvas.add(o);
         });
         canvas.renderOnAddRemove = origRenderOnAddRemove;
@@ -83,7 +151,128 @@ socket.on('catch up', function(data) {
     // canvas.add(data.text);
 });
 
+socket.on('firstMove', function() {
+    console.log("Recieved: FirstMove");
+    stage="playing";
+    updateButtonStates();
+    updateOperation();
+});
 
+socket.on('markerThrow', function(data) {
+    console.log("Received: markerThrow");
+    setMarker(data.x, data.y);
+})
+
+/////////////////////////////////////////
+//
+//      Notification Code
+//
+/////////////////////////////////////////
+function checkNotificationPromise() {
+    try {
+      Notification.requestPermission().then();
+    } catch(e) {
+      return false;
+    }
+
+    return true;
+  }
+  
+function askNotificationPermission() {
+    // function to actually ask the permissions
+    function handlePermission(permission) {
+        // Whatever the user answers, we make sure Chrome stores the information
+        if(!('permission' in Notification)) {
+            Notification.permission = permission;
+        }
+        
+    }
+    
+    // Let's check if the browser supports notifications
+    if (!('Notification' in window)) {
+        console.log("This browser does not support notifications.");
+    } else {
+        if(checkNotificationPromise()) {
+            Notification.requestPermission()
+            .then((permission) => {
+                handlePermission(permission);
+            })
+        } else {
+            Notification.requestPermission(function(permission) {
+                handlePermission(permission);
+            });
+        }
+    }
+}
+askNotificationPermission();
+/////////////////////////////////////////
+//
+//      Chat Code
+//
+/////////////////////////////////////////
+
+document.addEventListener('keypress', function(evt) {
+    if (evt.code === 'Enter' && document.activeElement.id === 'chatInput') {
+        sendMessage();
+    }
+});
+
+function sendMessage() {
+    var value = $("#chatInput").val();
+    var objectToSend = {
+        gameName: gameName,
+        playerName: playerName,
+        message: value
+    };
+    
+    if (value != '' && value != null) {
+        socket.emit('message-up', objectToSend);
+        $("#chatInput").val('');
+    }
+}
+
+socket.on('message-down', function(data) {
+    var newElement = createElement(data);
+    $("#chatContainer").append(newElement);
+});
+
+var createElement = function(data) {
+    if (data.type === "chat") {
+        var top = document.createElement('div');
+        top.classList.add('chatMessage');
+        top.classList.add('chatWindowRow');
+        
+        var sender = document.createElement('div');
+        sender.classList.add('chatMessageSender');
+        sender.append(document.createTextNode(data.playerName))
+        top.append(sender);
+        
+        var message = document.createElement('div');
+        message.classList.add('chatMessageContent');
+        message.append(document.createTextNode(data.message));
+        top.append(message);
+        
+        return top;
+    }
+    if (data.type === "turn") {
+        var top = document.createElement('div');
+        top.classList.add('chatMessage');
+        top.classList.add('chatWindowRow');
+        
+        var sender = document.createElement('div');
+        sender.classList.add('chatMessageSender');
+        sender.append(document.createTextNode(data.message))
+        top.append(sender);
+        
+        return top;
+    }
+}
+
+/////////////////////////////////////////
+//
+//      Game Code
+//
+/////////////////////////////////////////
 //Create the canvas for play.
 var canvas = this.__canvas = new fabric.Canvas('gameCanvas', {
     isDrawingMode : true,
@@ -92,10 +281,7 @@ var canvas = this.__canvas = new fabric.Canvas('gameCanvas', {
 
 
 
-if (canvas.freeDrawingBrush) {
-    canvas.freeDrawingBrush.color = '#ff0000';
-    canvas.freeDrawingBrush.width = 5;
-}
+
 
 
 
@@ -107,41 +293,27 @@ canvas.on("path:created", function(o) {
 })
 
 
-$("exportToSvg").onclick = function(event) {
-    console.log("SVG:");
-    console.log(canvas.toSVG());
-}
-
-$("stageButton").onclick = function(event) {
-    if (stage === "waiting") {
-        stage = "playing";
-    }
-
-    updateOperation();
-}
-
-
-
-$("lockButton").onclick = function(event) {
-
-}
-
 var createText = function(left,top) {
     textObject = new fabric.IText('Your Rule Here', {
         fontFamily: 'arial black',
         left:left-150,
-        top:top-50
+        top:top-50,
+        fill: color
     });
     return textObject;
 }
 
 var updateButtonStates = function() {
     if (stage === 'waiting') {
-        $("modeDraw").disabled = true;
-        $("modeText").disabled = true;
+        $("#playingControls").hide();
+        $("#waitingMessage").show();
+        $("#modeDraw").disabled = true;
+        $("#modeText").disabled = true;
     } else {
-        $("modeDraw").disabled = false;
-        $("modeText").disabled = false;
+        $("#playingControls").show();
+        $("#waitingMessage").hide();
+        $("#modeDraw").disabled = false;
+        $("#modeText").disabled = false;
     }
 }
 
@@ -183,8 +355,8 @@ canvas.on('mouse:wheel', function(opt) {
         opt.e.preventDefault();
         opt.e.stopPropagation();
         console.log(zoom);
-
-
+        
+        
         var vpt = this.viewportTransform;
         if (zoom < 400 / 1000) {
             this.viewportTransform[4] = 200 - 1000 * zoom / 2;
@@ -202,81 +374,171 @@ canvas.on('mouse:wheel', function(opt) {
             }
         }
     }
-  });
+});
 
 canvas.on('mouse:move', function(opt) {
     if (canvas.isDragging) {
-      var e = opt.e;
-      canvas.viewportTransform[4] += e.clientX - canvas.lastPosX;
-      canvas.viewportTransform[5] += e.clientY - canvas.lastPosY;
-      canvas.renderAll();
-      canvas.lastPosX = e.clientX;
-      canvas.lastPosY = e.clientY;
+        var e = opt.e;
+        canvas.viewportTransform[4] += e.clientX - canvas.lastPosX;
+        canvas.viewportTransform[5] += e.clientY - canvas.lastPosY;
+        canvas.renderAll();
+        canvas.lastPosX = e.clientX;
+        canvas.lastPosY = e.clientY;
     }
-  });
+});
 
 //Set the mode variable and update functionality appropriately.
 var setMode = function(selectedMode) {
     mode = selectedMode;
-
+    
     //Set defaults. 
     canvas.isDrawingMode = false;
-
+    
     if (textObject) {
         lockObject(textObject, true);
     }
-
-    $("modeDraw").classList.remove("active");
-    $("modeText").classList.remove("active");
-    $("modeMove").classList.remove("active");
+    
+    $("#modeDraw").removeClass("active");
+    $("#modeText").removeClass("active");
+    $("#modeMove").removeClass("active");
     //Modify based on what mode is selected.
     if (selectedMode === "drawing") {
         canvas.isDrawingMode = true;
-        $("modeDraw").classList.add("active");
+        $("#modeDraw").addClass("active");
     } else if (selectedMode === "typing") {
         if (!textObject) {
             var center = getCenter(newObjects);
             canvas.add(createText(center[0], center[1]));
         }
-
+        
         lockObject(textObject, false);
-        $("modeText").classList.add("active");
+        $("#modeText").addClass("active");
     } else if (selectedMode === "moving") {
         console.log("Moving Mode");
-        $("modeMove").classList.add("active");
+        $("#modeMove").addClass("active");
     }
 }
 
-$("modeDraw").onclick = function(event) {setMode("drawing")}
-$("modeText").onclick = function(event) {setMode("typing")}
-$("modeMove").onclick = function(event) {setMode("moving")}
+$("#throwMarker").click(function(event) {
+    console.log("throw!");
+    var minX;
+    var maxX;
+    var minY;
+    var maxY;
+    
+    //If there are objects, use the first one. If not, set a basic min+max.
+    if (existingObjects.length >= 1) {
+        console.log(existingObjects[0]);
+        minX = existingObjects[0].oCoords.tl.x;
+        minY = existingObjects[0].oCoords.tl.y;
+        maxX = existingObjects[0].oCoords.br.x;
+        maxY = existingObjects[0].oCoords.br.y;
+    } else {
+        minX = 0;
+        minY = 0;
+        maxX = 100;
+        maxY = 100;
+    }
+    for (var i = 0; i < existingObjects.length; ++i) {
+        //Find the bounds of all existing objects.
+        var coords = existingObjects[i].oCoords;
+        if (coords.tl.x < minX) {
+            minX = coords.tl.x;
+        }
+        
+        if (coords.tl.y < minY) {
+            minY = coords.tl.y;
+        }
+        
+        if (coords.br.x > maxX) {
+            maxX = coords.br.x;
+        }
+        
+        if (coords.br.y > maxY) {
+            maxY = coords.br.y;
+        }
+        
+    }
+    
+    var stripe = 100; //A stripe of space around the board that playing could be allowed.
+    minX = minX - stripe;
+    minY = minY - stripe;
+    maxX = maxX + stripe;
+    maxY = maxY + stripe;
+    
+    var randomX = (Math.random() * (maxX - minX)) + minX;
+    var randomY = (Math.random() * (maxY - minY)) + minY;
+    
+    setMarker(randomX, randomY);
+    
+    socket.emit('markerThrow', {
+        gameName: gameName,
+        x: randomX,
+        y: randomY
+    });
+    
+    
+    
+})
+
+var setMarker = function(x, y) {
+    if (markerObject != null) {
+        canvas.remove(markerObject);
+    }
+    
+    markerObject = new fabric.Circle({
+        top : x - 10,
+        left : y - 10,
+        radius: 20,
+        fill: "#000"
+    });
+    
+    
+    
+    canvas.add(markerObject);
+}
+
+$("#modeDraw").click(function(event) {setMode("drawing")});
+$("#modeText").click(function(event) {setMode("typing")});
+$("#modeMove").click(function(event) {setMode("moving")});
 
 var finishTurn = function() {
     var output = {
         name : gameName,
         playerId : playerId,
         playerName : playerName,
-        objects : newObjects.concat([textObject])
+        
         
     }
-    console.log(JSON.stringify(output));
-
-    existingObjects.concat(newObjects);
-    lockObject(textObject,true);
-    existingObjects.push(textObject);
-    newObjects = [];
-    textObject = null;
-
+    
+    if (newObjects.length > 0 && textObject != null) {
+        existingObjects.concat(newObjects);
+        lockObject(textObject,true);
+        existingObjects.push(textObject);
+        output.objects = newObjects.concat([textObject]);
+        newObjects = [];
+        textObject = null;
+    } else if (newObjects.length > 0) {
+        alert("You cannot finish your turn without a rule if you have drawn.");
+        return;
+    } else if (textObject != null) {
+        alert("You have to draw a shape around your rule.");
+        return;
+    } else {
+        console.log(JSON.stringify(output));
+    }
+    
+    
     //Send data to server?
     socket.emit('moveFinished', output);
     stage = 'waiting';
     setMode("moving");
-
+    
     updateButtonStates();
 }
 
 
-$("finishTurn").onclick = finishTurn;
+$("#finishTurn").click(finishTurn);
 
 var lockObject = function(targetObject, lock) {
     targetObject.lockMovementX = lock;
@@ -290,16 +552,16 @@ var getCenter = function(pathList) {
     if (pathList.length === 0) {
         return [100, 100];
     }
-
+    
     //Count up the X and Y values of the center of the path.
     var xCumulative = 0;
     var yCumulative = 0;
-
+    
     for (var i = 0; i < pathList.length; ++i) {
         xCumulative += pathList[i].left;
         yCumulative += pathList[i].top;
     }
-
+    
     return [xCumulative/pathList.length, yCumulative/pathList.length];
 }
 
@@ -312,8 +574,48 @@ window.onbeforeunload = function() {
 }
 
 
+socket.on('socketId', function(data) {
+    console.log("Recieved: socketId");
+    playerId = data;
+    console.log(playerId); 
+    
+    //Process the URL vars.
+    var urlVars = getUrlVars();
+    
+    if ('gameName' in urlVars) {
+        gameName = urlVars.gameName;
+        $("#gameNameInput").val(urlVars.gameName);
+    }
+    
+    if ('playerName' in urlVars) {
+        playerName = urlVars.playerName;
+        $("#playerNameInput").val(urlVars.playerName);
+    }
+    
+    if ('color' in urlVars) {
+        color = urlVars.color;
+        $("#colorInput").val(urlVars.color);
+    }
+    
+    if ('gameName' in urlVars && 'playerName' in urlVars && 'color' in urlVars) {
+        //If all 3 are in, just join the game and get moving.
+        //Join the game (emitting to the server)
+        joinGame(gameName, playerName);
+        
+        if (canvas.freeDrawingBrush) {
+            canvas.freeDrawingBrush.color = color;
+            canvas.freeDrawingBrush.width = 5;
+        }
+    } else {
+        //If a value is missing, display the modal.
+        $('#myModal').modal({
+            backdrop:'static',
+            keyboard: false,
+            show:true
+        });
+    }
+    
+    //Last minute loads.
+    updateOperation();
+});
 
-
-
-//Last minute loads.
-updateOperation();

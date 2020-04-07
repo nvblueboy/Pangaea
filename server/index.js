@@ -48,6 +48,9 @@ io.on('connection', function(socket) {
         if (!(data.gameName in games)) {
             //If the player enters a name of a game that isn't currently in progress, create a new one.
             games[data.gameName] = newGame(data.gameName, data.player, socket);
+            socket.emit('firstMove');
+            log(games[data.gameName], 'Created Game.');
+            log(games[data.gameName], 'Player Joined: '+socket.id);
         } else {
             var game = games[data.gameName];
             //Add the player to the list of players.
@@ -63,21 +66,91 @@ io.on('connection', function(socket) {
 
         var game = games[data.name];
         log(game, "Move Finished.");
+        var nextPlayerName;
         //Set next player to play.
         for (var i = 0; i < game.players.length; ++i) {
             if (game.activePlayer == game.players[i].id) {
                 //Use the modulus operator to decide whos turn it is next.
                 var nextIndex = (i+1) % (game.players.length);
                 game.activePlayer = game.players[nextIndex].id;
+                nextPlayerName = game.players[nextIndex].name;
                 break;
             }
         }
 
         //Send the data out to everyone.
+        var chatData = {
+            type : "turn",
+            message : nextPlayerName + ", your turn!"
+        };
+
         for (var sock of game.sockets) {            
             data.nextPlayer = game.activePlayer;
             sock.emit('newMove', data);
             game.data = game.data.concat(data.objects)
+            sock.emit('message-down', chatData);
+        }
+    });
+
+    socket.on('markerThrow', function(data) {
+        var game = games[data.gameName];
+        for (var sock of game.sockets) {
+            sock.emit('markerThrow', data);
+        }
+    });
+
+    //Understand a message as it comes in from the user.
+    socket.on('message-up', function(data) {
+        var game = games[data.gameName];
+
+        //If it starts with a / then it is a command.
+        if (data.message.startsWith('/')) {
+            var command = data.message.split(' ');
+
+            if (command[0] === '/skip') {
+                //if the command is "skip", then skip the current player.
+
+                log(game, "Skipping.");
+                var nextPlayerName;
+                //Set next player to play.
+                for (var i = 0; i < game.players.length; ++i) {
+                    if (game.activePlayer == game.players[i].id) {
+                        //Use the modulus operator to decide whos turn it is next.
+                        var nextIndex = (i+1) % (game.players.length);
+                        game.activePlayer = game.players[nextIndex].id;
+                        nextPlayerName = game.players[nextIndex].name;
+                        break;
+                    }
+                }
+
+                //Send the data out to everyone.
+                var chatData = {
+                    type : "turn",
+                    message : nextPlayerName + ", your turn!"
+                };
+
+                var data = {
+                    gameName : data.gameName
+                    
+                }
+
+                for (var sock of game.sockets) {            
+                    data.nextPlayer = game.activePlayer;
+                    sock.emit('newMove', data);
+                    sock.emit('message-down', chatData);
+                }
+
+            } else {
+                socket.emit('message-down', {
+                    type:"turn",
+                    message:"No such command: "+command[0]
+                });
+            }
+            return;
+        }
+        data.type="chat";
+        for(var sock of game.sockets) {
+            sock.emit("message-down", data);
         }
     });
 
@@ -103,7 +176,7 @@ io.on('connection', function(socket) {
                 delete games[game.name];
             }
         }
-    })
+    });
 });
 
 function log(game, text) {
