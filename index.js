@@ -3,12 +3,13 @@ var express = require('express');
 var http = require('http');
 var path = require('path');
 var socketIO = require('socket.io');
+const port = process.env.PORT || 80;
 
 var app = express();
 var server = http.Server(app);
 var io = socketIO(server);
 
-app.set('port', 80);
+app.set('port', port);
 app.use('/static', express.static(__dirname + '/static'));
 
 // Routing
