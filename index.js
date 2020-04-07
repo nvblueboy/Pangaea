@@ -3,7 +3,7 @@ var express = require('express');
 var http = require('http');
 var path = require('path');
 var socketIO = require('socket.io');
-const port = process.env.PORT || 80;
+const port = process.env.PORT || 3000;
 
 var app = express();
 var server = http.Server(app);
@@ -19,7 +19,7 @@ app.get('*', function(request, response) {
 
 
 // Starts the server.
-server.listen(80, function() {
+server.listen(port, function() {
     console.log('Starting server on port 80');
 });
 
