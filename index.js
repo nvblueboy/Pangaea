@@ -12,7 +12,7 @@ app.set('port', 80);
 app.use('/static', express.static(__dirname + '/static'));
 
 // Routing
-app.get('/', function(request, response) {
+app.get('*', function(request, response) {
     response.sendFile(path.join(__dirname, 'static/index.html'));
 });
 
