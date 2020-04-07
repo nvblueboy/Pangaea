@@ -177,7 +177,7 @@ function checkNotificationPromise() {
 
     return true;
   }
-  
+
 function askNotificationPermission() {
     // function to actually ask the permissions
     function handlePermission(permission) {
@@ -357,22 +357,22 @@ canvas.on('mouse:wheel', function(opt) {
         console.log(zoom);
         
         
-        var vpt = this.viewportTransform;
-        if (zoom < 400 / 1000) {
-            this.viewportTransform[4] = 200 - 1000 * zoom / 2;
-            this.viewportTransform[5] = 200 - 1000 * zoom / 2;
-        } else {
-            if (vpt[4] >= 0) {
-                this.viewportTransform[4] = 0;
-            } else if (vpt[4] < canvas.getWidth() - 1000 * zoom) {
-                this.viewportTransform[4] = canvas.getWidth() - 1000 * zoom;
-            }
-            if (vpt[5] >= 0) {
-                this.viewportTransform[5] = 0;
-            } else if (vpt[5] < canvas.getHeight() - 1000 * zoom) {
-                this.viewportTransform[5] = canvas.getHeight() - 1000 * zoom;
-            }
-        }
+        // var vpt = this.viewportTransform;
+        // if (zoom < 400 / 1000) {
+        //     this.viewportTransform[4] = 200 - 1000 * zoom / 2;
+        //     this.viewportTransform[5] = 200 - 1000 * zoom / 2;
+        // } else {
+        //     if (vpt[4] >= 0) {
+        //         this.viewportTransform[4] = 0;
+        //     } else if (vpt[4] < canvas.getWidth() - 1000 * zoom) {
+        //         this.viewportTransform[4] = canvas.getWidth() - 1000 * zoom;
+        //     }
+        //     if (vpt[5] >= 0) {
+        //         this.viewportTransform[5] = 0;
+        //     } else if (vpt[5] < canvas.getHeight() - 1000 * zoom) {
+        //         this.viewportTransform[5] = canvas.getHeight() - 1000 * zoom;
+        //     }
+        // }
     }
 });
 
