@@ -39,6 +39,33 @@ var newGame = function(name, firstPlayer, socket) {
     }
 }
 
+var startNextTurn = function(game) {
+    var nextPlayerName;
+
+    for (var i = 0; i < game.players.length; ++i) {
+        if (game.activePlayer == game.players[i].id) {
+            //Use the modulus operator to decide whos turn it is next.
+            var nextIndex = (i+1) % (game.players.length);
+            game.activePlayer = game.players[nextIndex].id;
+            nextPlayerName = game.players[nextIndex].name;
+            break;
+        }
+    }
+
+    //Send the data out to everyone.
+    var chatData = {
+        type : "turn",
+        message : nextPlayerName + ", your turn!"
+    };
+
+    for (var sock of game.sockets) {    
+        sock.emit('message-down', chatData);
+    }
+
+    return nextPlayerName;
+
+}
+
 io.on('connection', function(socket) {
     socket.on('new player', function() {
         console.log("New Player, Socket "+socket.id);
@@ -67,29 +94,12 @@ io.on('connection', function(socket) {
 
         var game = games[data.name];
         log(game, "Move Finished.");
-        var nextPlayerName;
-        //Set next player to play.
-        for (var i = 0; i < game.players.length; ++i) {
-            if (game.activePlayer == game.players[i].id) {
-                //Use the modulus operator to decide whos turn it is next.
-                var nextIndex = (i+1) % (game.players.length);
-                game.activePlayer = game.players[nextIndex].id;
-                nextPlayerName = game.players[nextIndex].name;
-                break;
-            }
-        }
-
-        //Send the data out to everyone.
-        var chatData = {
-            type : "turn",
-            message : nextPlayerName + ", your turn!"
-        };
+        var nextPlayerName = startNextTurn(game);
 
         for (var sock of game.sockets) {            
             data.nextPlayer = game.activePlayer;
             sock.emit('newMove', data);
             game.data = game.data.concat(data.objects)
-            sock.emit('message-down', chatData);
         }
     });
 
@@ -112,24 +122,11 @@ io.on('connection', function(socket) {
                 //if the command is "skip", then skip the current player.
 
                 log(game, "Skipping.");
-                var nextPlayerName;
+                var nextPlayerName = startNextTurn(game);
                 //Set next player to play.
-                for (var i = 0; i < game.players.length; ++i) {
-                    if (game.activePlayer == game.players[i].id) {
-                        //Use the modulus operator to decide whos turn it is next.
-                        var nextIndex = (i+1) % (game.players.length);
-                        game.activePlayer = game.players[nextIndex].id;
-                        nextPlayerName = game.players[nextIndex].name;
-                        break;
-                    }
-                }
+                
 
-                //Send the data out to everyone.
-                var chatData = {
-                    type : "turn",
-                    message : nextPlayerName + ", your turn!"
-                };
-
+                
                 var data = {
                     gameName : data.gameName
                     
@@ -138,7 +135,6 @@ io.on('connection', function(socket) {
                 for (var sock of game.sockets) {            
                     data.nextPlayer = game.activePlayer;
                     sock.emit('newMove', data);
-                    sock.emit('message-down', chatData);
                 }
 
             } else {
@@ -160,6 +156,25 @@ io.on('connection', function(socket) {
         
         if (game) {
             log(game, "User Leaving: "+data.playerId);
+
+            if (game.activePlayer === data.playerId) {
+                log(game, 'Active player left. Skipping.');
+                var nextPlayerName = startNextTurn(game);
+
+                var data = {
+                    gameName : data.gameName
+                    
+                }
+
+                for (var sock of game.sockets) {            
+                    data.nextPlayer = game.activePlayer;
+                    sock.emit('newMove', data);
+                }
+            }
+
+
+
+
             var index = 0;
             for (var i = 0; i < game.players.length; ++i) {
                 if (game.players[i].id === data.playerId) {
@@ -176,6 +191,8 @@ io.on('connection', function(socket) {
                 log(game, "Last Player has left. Deleting game.");
                 delete games[game.name];
             }
+
+            
         }
     });
 });

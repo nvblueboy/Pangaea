@@ -78,8 +78,6 @@ socket.on('message', function(data) {
 //Get Socket/Player ID From Server.
 socket.emit('new player');
 
-
-
 var joinGame = function(gameToJoin, newPlayerName) {
     gameName = gameToJoin;
     playerName = newPlayerName;
@@ -87,12 +85,14 @@ var joinGame = function(gameToJoin, newPlayerName) {
         gameName: gameName,
         player : {
             id:playerId,
-            name:playerName
+            name:playerName,
+            color:color
         }
     });
+    
+    //Set the input for sharing to the correct place.
+    $("#shareText").val("http://"+window.location.hostname+'/?gameName='+gameName);
 }
-
-
 
 socket.on('newMove', function(data) {
     console.log("Received: newMove");
@@ -124,6 +124,8 @@ socket.on('newMove', function(data) {
         });
     }
     
+    $("#throwMarker").show();
+    
     
     // canvas.add(data.text);
 });
@@ -154,6 +156,7 @@ socket.on('catch up', function(data) {
 socket.on('firstMove', function() {
     console.log("Recieved: FirstMove");
     stage="playing";
+    $("#throwMarker").show();
     updateButtonStates();
     updateOperation();
 });
@@ -170,13 +173,13 @@ socket.on('markerThrow', function(data) {
 /////////////////////////////////////////
 function checkNotificationPromise() {
     try {
-      Notification.requestPermission().then();
+        Notification.requestPermission().then();
     } catch(e) {
-      return false;
+        return false;
     }
-
+    
     return true;
-  }
+}
 
 function askNotificationPermission() {
     // function to actually ask the permissions
@@ -222,7 +225,8 @@ function sendMessage() {
     var objectToSend = {
         gameName: gameName,
         playerName: playerName,
-        message: value
+        message: value,
+        color:color
     };
     
     if (value != '' && value != null) {
@@ -244,6 +248,11 @@ var createElement = function(data) {
         
         var sender = document.createElement('div');
         sender.classList.add('chatMessageSender');
+
+        var colorBox = document.createElement('div');
+        colorBox.classList.add('chatMessageColorBox');
+        colorBox.style = 'background-color:'+data.color;
+        sender.append(colorBox);
         sender.append(document.createTextNode(data.playerName))
         top.append(sender);
         
@@ -279,10 +288,29 @@ var canvas = this.__canvas = new fabric.Canvas('gameCanvas', {
     selection : false
 });
 
-
-
-
-
+$(window).resize(function(){
+    
+    var w = $(window).width() - 300;
+    var h = $(window).height();
+    var center = {x:w / 2, y:h / 2};
+    
+    canvas.setDimensions({width:w,height:h});
+    canvas.forEachObject(function(obj){
+        
+        obj.set({
+            left : center.x + obj.offsetLeft,
+            top : center.y + + obj.offsetTop,
+        });
+        
+        obj.setCoords();
+        
+    });
+    
+    // need to call calcOffset whenever the canvas resizes
+    canvas.calcOffset();
+    canvas.renderAll();
+    
+});
 
 
 canvas.on("path:created", function(o) {
@@ -327,8 +355,6 @@ var updateOperation = function() {
     }
 }
 
-
-
 canvas.on("mouse:down", function(opt) {
     var evt = opt.e;
     if (mode === 'moving') {
@@ -344,6 +370,22 @@ canvas.on("mouse:up", function(opt) {
     }
 });
 
+$("#zoomIn").click(function(evt) {
+    zoomDelta(.1);
+});
+
+$("#zoomOut").click(function(evt) {
+    zoomDelta(-.1);
+});
+
+var zoomDelta = function(delta) {
+    var zoom = canvas.getZoom();
+    zoom = zoom + delta;
+    if (zoom > 1) zoom = 1;
+    if (zoom < 0.2) zoom = 0.2;
+    canvas.setZoom(zoom);
+}
+
 canvas.on('mouse:wheel', function(opt) {
     if (mode === "moving") {
         var delta = opt.e.deltaY;
@@ -354,7 +396,6 @@ canvas.on('mouse:wheel', function(opt) {
         canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
         opt.e.preventDefault();
         opt.e.stopPropagation();
-        console.log(zoom);
         
         
         // var vpt = this.viewportTransform;
@@ -421,6 +462,7 @@ var setMode = function(selectedMode) {
 
 $("#throwMarker").click(function(event) {
     console.log("throw!");
+    $("#throwMarker").hide();
     var minX;
     var maxX;
     var minY;
@@ -546,7 +588,19 @@ var lockObject = function(targetObject, lock) {
     targetObject.lockScalingX = lock;
     targetObject.lockScalingY = lock;
     targetObject.hasControls = !lock;
+    targetObject.hasBorders = !lock;
 }
+
+
+
+var undo = function() {
+    if (newObjects.length > 0) {
+        var toRemove = newObjects.pop();
+        canvas.remove(toRemove);
+    }
+}
+
+$("#undoButton").click(undo);
 
 var getCenter = function(pathList) {
     if (pathList.length === 0) {
@@ -572,6 +626,35 @@ window.onbeforeunload = function() {
     });
     console.log("Bye");
 }
+
+$("#copyLinkButton").click(function(evt) {
+    var copyText = document.getElementById("shareText");
+    
+    /* Select the text field */
+    copyText.select();
+    copyText.setSelectionRange(0, 99999); /*For mobile devices*/
+    
+    /* Copy the text inside the text field */
+    document.execCommand("copy");
+
+    console.log("copied:"+copyText.value);
+});
+
+// $("#downloadButton").click(function(evt) {
+//     const dataURL = canvas.toDataURL({
+//         width: canvas.width,
+//         height: canvas.height,
+//         left: 0,
+//         top: 0,
+//         format: 'png',
+//    });
+//    const link = document.createElement('a');
+//    link.download = 'image.png';
+//    link.href = dataURL;
+//    document.body.appendChild(link);
+//    link.click();
+//    document.body.removeChild(link);
+// })
 
 
 socket.on('socketId', function(data) {

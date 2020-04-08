@@ -61,28 +61,116 @@
                     <button id="modeText" class="modeButton" disable="true">Text</button>
                     <button id="modeMove" class="modeButton">Move</button>
                 </div>
-
+                
+                <button id="undoButton" class="commandButton">Undo</button>
+                
+                
+                
                 
                 <button id="finishTurn" class="commandButton">Finish Turn</button>
-
+                
                 <button id="throwMarker" class="commandButton">Throw Marker</button>
+                
+                
             </div>
-
-            <div class="waitingMessage" id="waitingMessage">
+            
+            
+            
+            <div class="waitingMessage hide" id="waitingMessage">
                 Waiting for your turn!
             </div>
-        </div>
+            
 
+            <div class="modeButtons">
+                <button id="zoomIn" class="modeButton zoomButton">+</button>
+                <button id="zoomOut" class="modeButton zoomButton">-</button>
+            </div>
+            
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle commandButton" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Menu
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#helpModal">Help</a>
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#shareModal">Share Game</a>
+                    <!-- <a class="dropdown-item" href="#" id="downloadButton">Download Image</a> -->
+                </div>
+            </div>
+            
+            
+            
+        </div>
+        
         
         
     </div>
-
+    
     <div class="chatWindow">
         <div class="chatMessageContainer" id="chatContainer">
             
         </div>
         <div class="chatInput">
             <input type="text" id="chatInput" class="form-control chatInput" placeholder="Chat..."/>
+        </div>
+    </div>
+    
+    
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1" role="dialog" aria-labelledby="helpModalTitle" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="helpModalTitle">Help</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <h3>Rules of Pizza Box:</h3>
+                    <ul>
+                        <li>When it is your turn, throw the marker.</li>
+                        <li>If the marker lands on an existing spot, you must follow it's rule.</li>
+                        <li>If the marker lands on empty space, you can create a new rule. Some examples of rules are:
+                            <ul>
+                                <li>Freestyle Rap for 30 Seconds</li>
+                                <li>Do karaoke to your favorite song</li>
+                                <li>Whoever threw the marker has to finish their drink</li>
+                                <li>The whole board plays "Never Have I Ever," where first to 0 has to drink</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    <!-- Share Game Modal -->
+    <div class="modal fade" id="shareModal" tabindex="-1" role="dialog" aria-labelledby="shareModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="shareModalLabel">Share Game</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Send other players this link. They will be directed directly to this game.
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="shareText" readonly="true">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="button" id="copyLinkButton">Copy</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
         </div>
     </div>
     
