@@ -5,6 +5,7 @@ var operations = [];
 var textObject;
 var previousTextObject;
 var markerObject;
+var editingTextObject = false;
 var playerList = [];
 
 //Operation Variables
@@ -77,9 +78,6 @@ $("#modalSubmit").click(function() {
 //
 /////////////////////////////////////////
 var socket = io();
-socket.on('message', function(data) {
-    console.log(data);
-});
 
 //Get Socket/Player ID From Server.
 socket.emit('new player');
@@ -101,8 +99,6 @@ var joinGame = function(gameToJoin, newPlayerName) {
 }
 
 socket.on('newMove', function(data) {
-    console.log("Received: newMove");
-    console.log(data);
     if (data.nextPlayer == playerId) {
         stage = "playing";
 
@@ -141,7 +137,6 @@ socket.on('newMove', function(data) {
 });
 
 socket.on('catch up', function(data) {
-    console.log("Received: Catch Up");
     //Load the lines into place.
     stage = "waiting";
     
@@ -164,7 +159,6 @@ socket.on('catch up', function(data) {
 });
 
 socket.on('firstMove', function() {
-    console.log("Recieved: FirstMove");
     stage="playing";
     $("#throwMarker").show();
     updateButtonStates();
@@ -172,7 +166,6 @@ socket.on('firstMove', function() {
 });
 
 socket.on('markerThrow', function(data) {
-    console.log("Received: markerThrow");
     setMarker(data.x, data.y);
 })
 
@@ -226,14 +219,13 @@ askNotificationPermission();
 /////////////////////////////////////////
 
 document.addEventListener('keypress', function(evt) {
-    console.log(event);
-    if (evt.code === 'Enter' && document.activeElement.id === 'chatInput') {
+    if (evt.code === 'Enter' && document.activeElement.id === 'chatInput' && !editingTextObject) {
         sendMessage();
     }
 
 
     //Ctrl+Z = Undo
-    if (event.ctrlKey && event.keyCode == 26) {
+    if (event.ctrlKey && event.keyCode == 26 && !editingTextObject) {
         event.stopPropagation();
         event.preventDefault();
         undo();
@@ -241,7 +233,7 @@ document.addEventListener('keypress', function(evt) {
 
     //Ctrl+= = Zoom In
     if (event.keyCode == 61) {
-        if (document.activeElement.id != 'chatInput') {
+        if (document.activeElement.id != 'chatInput' && !editingTextObject) {
             zoomDelta(.1);
             event.stopPropagation();
             event.preventDefault();
@@ -250,7 +242,7 @@ document.addEventListener('keypress', function(evt) {
 
     //Ctrl+- = Zoom In
     if (event.keyCode == 45) {
-        if (document.activeElement.id != 'chatInput') {
+        if (document.activeElement.id != 'chatInput' && !editingTextObject) {
             zoomDelta(-.1);
             event.stopPropagation();
             event.preventDefault();
@@ -259,8 +251,7 @@ document.addEventListener('keypress', function(evt) {
 
     //D = Draw Mode
     if (event.keyCode==100) {
-        if (document.activeElement.id != 'chatInput' && stage=="playing") {
-            console.log("drawing");
+        if (document.activeElement.id != 'chatInput' && stage=="playing" && !editingTextObject) {
             setMode("drawing");
             event.stopPropagation();
             event.preventDefault();
@@ -269,7 +260,7 @@ document.addEventListener('keypress', function(evt) {
 
     //T = Text Mode
     if (event.keyCode==116) {
-        if (document.activeElement.id != 'chatInput' && stage=="playing") {
+        if (document.activeElement.id != 'chatInput' && stage=="playing" && !editingTextObject) {
             setMode("typing");
             event.stopPropagation();
             event.preventDefault();
@@ -278,7 +269,7 @@ document.addEventListener('keypress', function(evt) {
 
     //M = Move Mode
     if (event.keyCode==109) {
-        if (document.activeElement.id != 'chatInput' && stage=="playing") {
+        if (document.activeElement.id != 'chatInput' && stage=="playing" && !editingTextObject) {
             setMode("moving");
             event.stopPropagation();
             event.preventDefault();
@@ -287,7 +278,7 @@ document.addEventListener('keypress', function(evt) {
 
     //Space = throw marker
     if (event.keyCode==32) {
-        if (document.activeElement.id != 'chatInput' && $("#throwMarker").is(":visible")) {
+        if (document.activeElement.id != 'chatInput' && $("#throwMarker").is(":visible") && !editingTextObject) {
             throwMarker();
             event.stopPropagation();
             event.preventDefault();
@@ -555,6 +546,7 @@ canvas.on('mouse:wheel', function(opt) {
     }
 });
 
+
 canvas.on('mouse:move', function(opt) {
     if (canvas.isDragging) {
         var e = opt.e;
@@ -565,6 +557,14 @@ canvas.on('mouse:move', function(opt) {
         canvas.lastPosX = e.clientX;
         canvas.lastPosY = e.clientY;
     }
+});
+
+canvas.on("text:editing:entered", function(evt){
+    editingTextObject = true;    
+});
+
+canvas.on("text:editing:exited", function(evt){
+    editingTextObject = false;
 });
 
 var moveCanvas = function(x,y) {
@@ -607,13 +607,11 @@ var setMode = function(selectedMode) {
         lockObject(textObject, false);
         $("#modeText").addClass("active");
     } else if (selectedMode === "moving") {
-        console.log("Moving Mode");
         $("#modeMove").addClass("active");
     }
 }
 
 var throwMarker = function(event) {
-    console.log("throw!");
     $("#throwMarker").hide();
     var minX;
     var maxX;
@@ -622,7 +620,6 @@ var throwMarker = function(event) {
     
     //If there are objects, use the first one. If not, set a basic min+max.
     if (existingObjects.length >= 1) {
-        console.log(existingObjects[0]);
         minX = existingObjects[0].oCoords.tl.x;
         minY = existingObjects[0].oCoords.tl.y;
         maxX = existingObjects[0].oCoords.br.x;
@@ -726,8 +723,6 @@ var finishTurn = function() {
     } else if (textObject != null) {
         alert("You have to draw a shape around your rule.");
         return;
-    } else {
-        console.log(JSON.stringify(output));
     }
     
     
@@ -815,7 +810,6 @@ window.onbeforeunload = function() {
         playerId : playerId,
         playerName : playerName
     });
-    console.log("Bye");
 }
 
 $("#copyLinkButton").click(function(evt) {
@@ -827,8 +821,6 @@ $("#copyLinkButton").click(function(evt) {
     
     /* Copy the text inside the text field */
     document.execCommand("copy");
-
-    console.log("copied:"+copyText.value);
 });
 
 $("#downloadButton").click(function(evt) {
@@ -850,9 +842,7 @@ $("#downloadButton").click(function(evt) {
 
 
 socket.on('socketId', function(data) {
-    console.log("Recieved: socketId");
     playerId = data;
-    console.log(playerId); 
     
     //Process the URL vars.
     var urlVars = getUrlVars();
