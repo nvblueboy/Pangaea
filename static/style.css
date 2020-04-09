@@ -116,6 +116,7 @@ body {
     right:0;
     bottom:0;
     border:1px solid #333;
+    border-left:none;
 
 }
 
@@ -142,6 +143,7 @@ body {
 .chatMessageContainer {
     overflow-y: scroll;
     height: 100%;
+    height: calc(100% - (1.5em + .75rem + 43px));
 }
 
 .chatMessageColorBox {
@@ -150,4 +152,12 @@ body {
     border: 1px solid black;
     margin-right: 5px;
     margin-top: 3px;
+}
+
+/* Player List */
+.activePlayer .chatMessageSender:before {
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: "\f061";
+    margin-right:5px;
 }

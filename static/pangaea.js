@@ -5,6 +5,7 @@ var operations = [];
 var textObject;
 var previousTextObject;
 var markerObject;
+var playerList = [];
 
 //Operation Variables
 var stage = "waiting";
@@ -26,6 +27,8 @@ function setCanvasSize() {
 
 //Set the initial amount
 setCanvasSize();
+
+$("#chat-tab").tab("show");
 
 
 /////////////////////////////////////////
@@ -242,6 +245,9 @@ function sendMessage() {
 socket.on('message-down', function(data) {
     var newElement = createElement(data);
     $("#chatContainer").append(newElement);
+
+    var objDiv = document.getElementById('chatContainer');
+    objDiv.scrollTop = objDiv.scrollHeight;
 });
 
 var createElement = function(data) {
@@ -280,6 +286,52 @@ var createElement = function(data) {
         return top;
     }
 }
+
+/////////////////////////////////////////
+//
+//      Player List Code
+//
+/////////////////////////////////////////
+
+
+var getPlayerList = function() {
+    socket.emit('requestPlayers', {gameName : gameName});
+}
+
+$("#players-tab").on("show.bs.tab", getPlayerList);
+
+socket.on('responsePlayers', function(data) {
+    playerList = data;
+
+    $("#players").empty();
+
+    for (var i = 0; i < data.length; ++i) {
+        var elem = createPlayerElement(data[i]);
+        $("#players").append(elem);
+    }
+});
+
+function createPlayerElement(player) {
+    var top = document.createElement('div');
+    top.classList.add('chatMessage');
+    top.classList.add('chatWindowRow');
+    if (player.activePlayer) {
+        top.classList.add('activePlayer');
+    }
+
+    var sender = document.createElement('div');
+    sender.classList.add('chatMessageSender');
+
+    var colorBox = document.createElement('div');
+    colorBox.classList.add('chatMessageColorBox');
+    colorBox.style = 'background-color:'+player.color;
+    sender.append(colorBox);
+    sender.append(document.createTextNode(player.name))
+    top.append(sender);
+
+    return top;
+}
+
 
 /////////////////////////////////////////
 //

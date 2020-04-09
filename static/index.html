@@ -3,7 +3,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     
     <link rel="stylesheet" type="text/css" href="./static/style.css">
-
+    
     <script src="https://kit.fontawesome.com/0f8b411d7c.js" crossorigin="anonymous"></script>
     
 </head>
@@ -82,7 +82,7 @@
                 Waiting for your turn!
             </div>
             
-
+            
             <div class="modeButtons">
                 <button id="zoomIn" class="modeButton zoomButton" data-toggle="tooltip" data-placement="top" title="Draw">
                     <i class="fas fa-search-plus"></i>
@@ -110,11 +110,29 @@
     </div>
     
     <div class="chatWindow">
-        <div class="chatMessageContainer" id="chatContainer">
-            
-        </div>
-        <div class="chatInput">
-            <input type="text" id="chatInput" class="form-control chatInput" placeholder="Chat..."/>
+        
+        
+        
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link" id="chat-tab" data-toggle="tab" href="#chat" role="tab" aria-controls="chat" aria-selected="false">Chat</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="players-tab" data-toggle="tab" href="#players" role="tab" aria-controls="players" aria-selected="false">Players</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade" id="chat" role="tabpanel" aria-labelledby="chat-tab">
+                <div class="chatContainer">
+                    <div class="chatMessageContainer" id="chatContainer">
+                        
+                    </div>
+                    <div class="chatInput">
+                        <input type="text" id="chatInput" class="form-control chatInput" placeholder="Chat..."/>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="players" role="tabpanel" aria-labelledby="players-tab">Loading...</div>
         </div>
     </div>
     
@@ -143,15 +161,15 @@
                             </ul>
                         </li>
                     </ul>
-
+                    
                     <h3>Who Made This?</h3>
                     Pizza Box Online was created by <a href="http://dylantbowman.com" target="_blank">Dylan Bowman</a> in 2020. 
-
+                    
                     <h3>What tech does it use?</h3>
                     The Back-End is <a href="https://nodejs.org/" target="_blank">Node.js</a> using <a href="https://expressjs.com/" target="_blank">Express</a> for serving and <a href="https://socket.io" target="_blank">Socket.io</a> for WebSocket support.<br/>
                     The Front-End uses <a href="https://getbootstrap.com/" target="_blank">Bootstrap</a>, <a href="https://getbootstrap.com/" target="_blank">JQuery</a>, <a href="http://fabricjs.com/" target="_blank">Fabric.js</a>, and <a href="https://fontawesome.com/" target="_blank">Font Awesome</a>.<br/>
                     The site is hosted on <a href="https://www.heroku.com/" target="_blank">Heroku</a>.
-
+                    
                     <h3>Who deserves thanks?</h3>
                     <h6>Specific people remain unnamed to protect anonymity.</h6>
                     <ul>

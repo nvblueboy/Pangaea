@@ -61,10 +61,24 @@ var startNextTurn = function(game) {
         type : "turn",
         message : nextPlayerName + ", your turn!"
     };
+
+    var output = [];
+
+    for (var player of game.players) {
+        output.push({
+            name:player.name,
+            id:player.id,
+            color:player.color,
+            activePlayer:game.activePlayer ===player.id,
+        });
+    }
     
     for (var sock of game.sockets) {    
         sock.emit('message-down', chatData);
+        sock.emit('responsePlayers', output);
     }
+
+
     
     return nextPlayerName;
     
@@ -238,6 +252,23 @@ io.on('connection', function(socket) {
         for(var sock of game.sockets) {
             sock.emit("message-down", data);
         }
+    });
+
+    socket.on('requestPlayers', function(data) {
+        var game = games[data.gameName];
+
+        var output = [];
+
+        for (var player of game.players) {
+            output.push({
+                name:player.name,
+                id:player.id,
+                color:player.color,
+                activePlayer:game.activePlayer ===player.id,
+            });
+        }
+
+        socket.emit('responsePlayers', output);
     });
     
     socket.on('leavingGame', function(data){
