@@ -105,9 +105,13 @@ socket.on('newMove', function(data) {
     console.log(data);
     if (data.nextPlayer == playerId) {
         stage = "playing";
-        //Play sound? Notification? 
+
         var text = 'It is your turn in Pizza Box!';
-        var notification = new Notification('Your Turn', { body: text });   
+        if (document.hidden) {
+            var notification = new Notification('Your Turn', { body: text }); 
+        }
+        playSound('./static/ding.mp3');  
+        
     } else {
         stage = "waiting";
     }
@@ -332,6 +336,17 @@ function createPlayerElement(player) {
     return top;
 }
 
+/////////////////////////////////////////
+//
+//      Audio Code
+//
+/////////////////////////////////////////
+
+function playSound(filename){
+    let src = './static/ding.mp3';
+    let audio = new Audio(src);
+    audio.play();
+  }
 
 /////////////////////////////////////////
 //
@@ -749,21 +764,21 @@ $("#copyLinkButton").click(function(evt) {
     console.log("copied:"+copyText.value);
 });
 
-// $("#downloadButton").click(function(evt) {
-//     const dataURL = canvas.toDataURL({
-//         width: canvas.width,
-//         height: canvas.height,
-//         left: 0,
-//         top: 0,
-//         format: 'png',
-//    });
-//    const link = document.createElement('a');
-//    link.download = 'image.png';
-//    link.href = dataURL;
-//    document.body.appendChild(link);
-//    link.click();
-//    document.body.removeChild(link);
-// })
+$("#downloadButton").click(function(evt) {
+    const dataURL = canvas.toDataURL({
+        width: canvas.width,
+        height: canvas.height,
+        left: 0,
+        top: 0,
+        format: 'png',
+   });
+   const link = document.createElement('a');
+   link.download = 'image.png';
+   link.href = dataURL;
+   document.body.appendChild(link);
+   link.click();
+   document.body.removeChild(link);
+})
 
 
 
