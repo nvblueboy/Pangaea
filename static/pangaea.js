@@ -622,7 +622,8 @@ var getCenter = function(pathList) {
 window.onbeforeunload = function() {
     socket.emit('leavingGame', {
         name: gameName,
-        playerId : playerId
+        playerId : playerId,
+        playerName : playerName
     });
     console.log("Bye");
 }

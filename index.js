@@ -73,20 +73,32 @@ io.on('connection', function(socket) {
     });
 
     socket.on('join game', function(data) {
+        var game;
         if (!(data.gameName in games)) {
             //If the player enters a name of a game that isn't currently in progress, create a new one.
-            games[data.gameName] = newGame(data.gameName, data.player, socket);
+            game = newGame(data.gameName, data.player, socket);
+            games[data.gameName] = game;
             socket.emit('firstMove');
-            log(games[data.gameName], 'Created Game.');
-            log(games[data.gameName], 'Player Joined: '+socket.id);
+            log(game, 'Created Game.');
+            log(game, 'Player Joined: '+socket.id);
         } else {
-            var game = games[data.gameName];
+            game = games[data.gameName];
             //Add the player to the list of players.
             game.players.push(data.player);
             game.sockets.push(socket);
             //Send the socket the latest game information.
             socket.emit('catch up', game.data);
             log(game, 'Catching up '+data.player.id);
+        }
+
+        //Send data to the players.
+        var chatData = {
+            type : "turn",
+            message : data.player.name + " has joined the game!"
+        };
+
+        for (var sock of game.sockets) {    
+            sock.emit('message-down', chatData);
         }
     })
 
@@ -157,6 +169,16 @@ io.on('connection', function(socket) {
         if (game) {
             log(game, "User Leaving: "+data.playerId);
 
+            //Send data to the players.
+            var chatData = {
+                type : "turn",
+                message : data.player.name + " has left the game."
+            };
+
+            for (var sock of game.sockets) {    
+                sock.emit('message-down', chatData);
+            }
+
             if (game.activePlayer === data.playerId) {
                 log(game, 'Active player left. Skipping.');
                 var nextPlayerName = startNextTurn(game);
@@ -185,6 +207,16 @@ io.on('connection', function(socket) {
 
             game.players.splice(index,1);
             game.sockets.splice(index,1);
+
+            //Send data to the players.
+            var chatData = {
+                type : "turn",
+                message : data.player.name + " has joined the game!"
+            };
+
+            for (var sock of game.sockets) {    
+                sock.emit('message-down', chatData);
+            }
 
             if (game.players.length == 0) {
                 //All players have left the game, clear it out.
