@@ -161,3 +161,8 @@ body {
     content: "\f061";
     margin-right:5px;
 }
+
+.keyContainer{
+    width:100px;
+    padding:7px;
+}

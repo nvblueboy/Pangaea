@@ -226,9 +226,74 @@ askNotificationPermission();
 /////////////////////////////////////////
 
 document.addEventListener('keypress', function(evt) {
+    console.log(event);
     if (evt.code === 'Enter' && document.activeElement.id === 'chatInput') {
         sendMessage();
     }
+
+
+    //Ctrl+Z = Undo
+    if (event.ctrlKey && event.keyCode == 26) {
+        event.stopPropagation();
+        event.preventDefault();
+        undo();
+    }
+
+    //Ctrl+= = Zoom In
+    if (event.keyCode == 61) {
+        if (document.activeElement.id != 'chatInput') {
+            zoomDelta(.1);
+            event.stopPropagation();
+            event.preventDefault();
+        }
+    }
+
+    //Ctrl+- = Zoom In
+    if (event.keyCode == 45) {
+        if (document.activeElement.id != 'chatInput') {
+            zoomDelta(-.1);
+            event.stopPropagation();
+            event.preventDefault();
+        }
+    }
+
+    //D = Draw Mode
+    if (event.keyCode==100) {
+        if (document.activeElement.id != 'chatInput' && stage=="playing") {
+            console.log("drawing");
+            setMode("drawing");
+            event.stopPropagation();
+            event.preventDefault();
+        }
+    }
+
+    //T = Text Mode
+    if (event.keyCode==116) {
+        if (document.activeElement.id != 'chatInput' && stage=="playing") {
+            setMode("typing");
+            event.stopPropagation();
+            event.preventDefault();
+        }
+    }
+
+    //M = Move Mode
+    if (event.keyCode==109) {
+        if (document.activeElement.id != 'chatInput' && stage=="playing") {
+            setMode("moving");
+            event.stopPropagation();
+            event.preventDefault();
+        }
+    }
+
+    //Space = throw marker
+    if (event.keyCode==32) {
+        if (document.activeElement.id != 'chatInput' && $("#throwMarker").is(":visible")) {
+            throwMarker();
+            event.stopPropagation();
+            event.preventDefault();
+        }
+    }
+
 });
 
 function sendMessage() {
@@ -547,7 +612,7 @@ var setMode = function(selectedMode) {
     }
 }
 
-$("#throwMarker").click(function(event) {
+var throwMarker = function(event) {
     console.log("throw!");
     $("#throwMarker").hide();
     var minX;
@@ -610,7 +675,9 @@ $("#throwMarker").click(function(event) {
     
     
     
-})
+}
+
+$("#throwMarker").click(throwMarker)
 
 var setMarker = function(x, y) {
     if (markerObject != null) {
