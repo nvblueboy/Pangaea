@@ -28,6 +28,10 @@ io.on('connection', function(socket) {
 });
 
 games = {};
+lastPings = {};
+pingTimes = {};
+pingTimeouts = {};
+pingIntervals = {};
 
 var newGame = function(name, firstPlayer, socket) {
     return {
@@ -41,7 +45,7 @@ var newGame = function(name, firstPlayer, socket) {
 
 var startNextTurn = function(game) {
     var nextPlayerName;
-
+    
     for (var i = 0; i < game.players.length; ++i) {
         if (game.activePlayer == game.players[i].id) {
             //Use the modulus operator to decide whos turn it is next.
@@ -51,27 +55,100 @@ var startNextTurn = function(game) {
             break;
         }
     }
-
+    
     //Send the data out to everyone.
     var chatData = {
         type : "turn",
         message : nextPlayerName + ", your turn!"
     };
-
+    
     for (var sock of game.sockets) {    
         sock.emit('message-down', chatData);
     }
-
+    
     return nextPlayerName;
+    
+}
 
+var kickPlayer = function(game, player) {
+    log(game, "User Leaving: "+player.id);
+    
+    //Send data to the players.
+    var chatData = {
+        type : "turn",
+        message : player.name + " has left the game."
+    };
+    
+    for (var sock of game.sockets) {    
+        sock.emit('message-down', chatData);
+    }
+    
+    if (game.activePlayer === player.id) {
+        log(game, 'Active player left. Skipping.');
+        var nextPlayerName = startNextTurn(game);
+        
+        var data = {
+            gameName : game.name
+            
+        }
+        
+        for (var sock of game.sockets) {            
+            data.nextPlayer = game.activePlayer;
+            sock.emit('newMove', data);
+        }
+    }
+    
+    clearInterval(pingIntervals[player.id]);
+    
+    
+    
+    
+    var index = 0;
+    for (var i = 0; i < game.players.length; ++i) {
+        if (game.players[i].id === player.id) {
+            index = i;
+            break;
+        }
+    }
+    
+    game.players.splice(index,1);
+    game.sockets.splice(index,1);
+    
+    if (game.players.length == 0) {
+        //All players have left the game, clear it out.
+        log(game, "Last Player has left. Deleting game.");
+        delete games[game.name];
+    }
 }
 
 io.on('connection', function(socket) {
+    
+    
+    
+    
+    
+    socket.on('disconnect', function() {
+        //The player disconnected. Clear out some sockets and shenanigans.
+        for (gameName in games) {
+            var game = games[gameName];
+            for (player of game.players) {
+                if (player.id == socket.Id) {
+                    //This is the player. Kick 'em.
+                    kickPlayer(game, player);
+                    break;
+                }
+            }
+        }
+    })
+    
     socket.on('new player', function() {
         console.log("New Player, Socket "+socket.id);
-        socket.emit('socketId', socket.id)
+        socket.emit('socketId', socket.id);
+        
+        
+        
     });
-
+    
     socket.on('join game', function(data) {
         var game;
         if (!(data.gameName in games)) {
@@ -90,65 +167,65 @@ io.on('connection', function(socket) {
             socket.emit('catch up', game.data);
             log(game, 'Catching up '+data.player.id);
         }
-
+        
         //Send data to the players.
         var chatData = {
             type : "turn",
             message : data.player.name + " has joined the game!"
         };
-
+        
         for (var sock of game.sockets) {    
             sock.emit('message-down', chatData);
         }
     })
-
+    
     socket.on('moveFinished', function(data) {
-
+        
         var game = games[data.name];
         log(game, "Move Finished.");
         var nextPlayerName = startNextTurn(game);
-
+        
         for (var sock of game.sockets) {            
             data.nextPlayer = game.activePlayer;
             sock.emit('newMove', data);
             game.data = game.data.concat(data.objects)
         }
     });
-
+    
     socket.on('markerThrow', function(data) {
         var game = games[data.gameName];
         for (var sock of game.sockets) {
             sock.emit('markerThrow', data);
         }
     });
-
+    
     //Understand a message as it comes in from the user.
     socket.on('message-up', function(data) {
         var game = games[data.gameName];
-
+        
         //If it starts with a / then it is a command.
         if (data.message.startsWith('/')) {
             var command = data.message.split(' ');
-
+            
             if (command[0] === '/skip') {
                 //if the command is "skip", then skip the current player.
-
+                
                 log(game, "Skipping.");
                 var nextPlayerName = startNextTurn(game);
                 //Set next player to play.
                 
-
+                
                 
                 var data = {
                     gameName : data.gameName
                     
                 }
-
+                
                 for (var sock of game.sockets) {            
                     data.nextPlayer = game.activePlayer;
                     sock.emit('newMove', data);
                 }
-
+                
             } else {
                 socket.emit('message-down', {
                     type:"turn",
@@ -162,69 +239,12 @@ io.on('connection', function(socket) {
             sock.emit("message-down", data);
         }
     });
-
+    
     socket.on('leavingGame', function(data){
         var game = games[data.name];
         
         if (game) {
-            log(game, "User Leaving: "+data.playerId);
-
-            //Send data to the players.
-            var chatData = {
-                type : "turn",
-                message : data.player.name + " has left the game."
-            };
-
-            for (var sock of game.sockets) {    
-                sock.emit('message-down', chatData);
-            }
-
-            if (game.activePlayer === data.playerId) {
-                log(game, 'Active player left. Skipping.');
-                var nextPlayerName = startNextTurn(game);
-
-                var data = {
-                    gameName : data.gameName
-                    
-                }
-
-                for (var sock of game.sockets) {            
-                    data.nextPlayer = game.activePlayer;
-                    sock.emit('newMove', data);
-                }
-            }
-
-
-
-
-            var index = 0;
-            for (var i = 0; i < game.players.length; ++i) {
-                if (game.players[i].id === data.playerId) {
-                    index = i;
-                    break;
-                }
-            }
-
-            game.players.splice(index,1);
-            game.sockets.splice(index,1);
-
-            //Send data to the players.
-            var chatData = {
-                type : "turn",
-                message : data.player.name + " has joined the game!"
-            };
-
-            for (var sock of game.sockets) {    
-                sock.emit('message-down', chatData);
-            }
-
-            if (game.players.length == 0) {
-                //All players have left the game, clear it out.
-                log(game, "Last Player has left. Deleting game.");
-                delete games[game.name];
-            }
-
-            
+            kickPlayer(game, {name:data.playerName,id:data.playerId});            
         }
     });
 });

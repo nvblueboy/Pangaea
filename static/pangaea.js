@@ -1,7 +1,9 @@
 // Object Tracking
 var existingObjects = [];
 var newObjects = [];
+var operations = [];
 var textObject;
+var previousTextObject;
 var markerObject;
 
 //Operation Variables
@@ -12,6 +14,7 @@ var playerId = 0;
 var playerName;
 var gameName;
 var color; 
+
 
 
 function setCanvasSize() {
@@ -166,6 +169,7 @@ socket.on('markerThrow', function(data) {
     setMarker(data.x, data.y);
 })
 
+
 /////////////////////////////////////////
 //
 //      Notification Code
@@ -295,16 +299,16 @@ $(window).resize(function(){
     var center = {x:w / 2, y:h / 2};
     
     canvas.setDimensions({width:w,height:h});
-    canvas.forEachObject(function(obj){
+    // canvas.forEachObject(function(obj){
         
-        obj.set({
-            left : center.x + obj.offsetLeft,
-            top : center.y + + obj.offsetTop,
-        });
+    //     obj.set({
+    //         left : center.x + obj.offsetLeft,
+    //         top : center.y + + obj.offsetTop,
+    //     });
         
-        obj.setCoords();
+    //     obj.setCoords();
         
-    });
+    // });
     
     // need to call calcOffset whenever the canvas resizes
     canvas.calcOffset();
@@ -317,7 +321,7 @@ canvas.on("path:created", function(o) {
     //Disable the new path from moving.
     lockObject(o.path, true);
     newObjects.push(o.path);
-    console.log(o.path);
+    operations.push("draw");
 })
 
 
@@ -328,6 +332,7 @@ var createText = function(left,top) {
         top:top-50,
         fill: color
     });
+    previousTextObject = JSON.parse(JSON.stringify(textObject));
     return textObject;
 }
 
@@ -343,10 +348,11 @@ var updateButtonStates = function() {
         $("#modeDraw").disabled = false;
         $("#modeText").disabled = false;
     }
+
+    $('[data-toggle="tooltip"]').tooltip();
 }
 
 var updateOperation = function() {
-    console.log(stage + " " + mode);
     if (stage === "waiting") {
         canvas.isDrawingMode = false;
         setMode("moving");
@@ -422,11 +428,24 @@ canvas.on('mouse:move', function(opt) {
         var e = opt.e;
         canvas.viewportTransform[4] += e.clientX - canvas.lastPosX;
         canvas.viewportTransform[5] += e.clientY - canvas.lastPosY;
+
         canvas.renderAll();
         canvas.lastPosX = e.clientX;
         canvas.lastPosY = e.clientY;
     }
 });
+
+var moveCanvas = function(x,y) {
+    // console.log("Moving Canvas to "+x+","+y);
+    // console.log(canvas.getZoom());
+    // canvas.isDragging = true;
+    // canvas.viewportTransform[4] = (x) * canvas.getZoom() + 200;
+    // canvas.viewportTransform[5] = (y) * canvas.getZoom() + 200;
+    // canvas.renderAll();
+    // canvas.lastPosX = x;
+    // canvas.lastPosY = y;
+    // canvas.isDragging = false;
+}
 
 //Set the mode variable and update functionality appropriately.
 var setMode = function(selectedMode) {
@@ -450,6 +469,7 @@ var setMode = function(selectedMode) {
         if (!textObject) {
             var center = getCenter(newObjects);
             canvas.add(createText(center[0], center[1]));
+            operations.push("text");
         }
         
         lockObject(textObject, false);
@@ -518,6 +538,8 @@ $("#throwMarker").click(function(event) {
         x: randomX,
         y: randomY
     });
+
+    moveCanvas(randomX, randomY);
     
     
     
@@ -532,8 +554,12 @@ var setMarker = function(x, y) {
         top : x - 10,
         left : y - 10,
         radius: 20,
-        fill: "#000"
+        fill: "#FF1A13",
+        stroke: 'rgba(0,0,0,1)',
+        strokeWidth: 5
     });
+
+    lockObject(markerObject, true);
     
     
     
@@ -591,13 +617,43 @@ var lockObject = function(targetObject, lock) {
     targetObject.hasBorders = !lock;
 }
 
-
-
-var undo = function() {
-    if (newObjects.length > 0) {
-        var toRemove = newObjects.pop();
-        canvas.remove(toRemove);
+canvas.on("object:modified", function(evt) {
+    if (evt.target === textObject && !undoUnderway) {
+        
+        operations.push(JSON.parse(JSON.stringify(previousTextObject)));
+        
+        previousTextObject = JSON.parse(JSON.stringify(textObject));
+        
     }
+})
+
+var undoUnderway = false;
+var undo = function() {
+    undoUnderway = true;
+    if (operations.length > 0) {
+        var op = operations.pop();
+
+        if (op === "draw") {
+            var toRemove = newObjects.pop();
+            canvas.remove(toRemove);
+        } else if (op === "text") {
+            canvas.remove(textObject);
+            textObject = null;
+        } else if (op.type === "i-text") {
+            //The text got moved. Undo that operation.
+            textObject.set('left', op.left);
+            textObject.set('top', op.top);
+            textObject.set('scaleX', op.scaleX);
+            textObject.set('scaleY', op.scaleY);
+            textObject.set('angle', op.angle);
+            textObject.set('text', op.text);
+            textObject.setCoords();
+            canvas.renderAll();
+            previousTextObject = JSON.parse(JSON.stringify(textObject));
+            
+        }
+    }
+    undoUnderway = false;
 }
 
 $("#undoButton").click(undo);
@@ -656,6 +712,7 @@ $("#copyLinkButton").click(function(evt) {
 //    link.click();
 //    document.body.removeChild(link);
 // })
+
 
 
 socket.on('socketId', function(data) {

@@ -3,6 +3,8 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     
     <link rel="stylesheet" type="text/css" href="./static/style.css">
+
+    <script src="https://kit.fontawesome.com/0f8b411d7c.js" crossorigin="anonymous"></script>
     
 </head>
 
@@ -57,17 +59,17 @@
             
             <div class="playingControls" id="playingControls">
                 <div class="modeButtons">
-                    <button id="modeDraw" class="modeButton" disable="true">Draw</button>
-                    <button id="modeText" class="modeButton" disable="true">Text</button>
-                    <button id="modeMove" class="modeButton">Move</button>
+                    <button id="modeDraw" class="modeButton" disable="true" alt="Draw"><i class="fas fa-pencil-alt"></i></button>
+                    <button id="modeText" class="modeButton" disable="true" alt="Text"><i class="fas fa-i-cursor"></i></button>
+                    <button id="modeMove" class="modeButton" alt="Move"><i class="fas fa-arrows-alt"></i></button>
                 </div>
                 
-                <button id="undoButton" class="commandButton">Undo</button>
+                <button id="undoButton" class="commandButton undoButton" alt="Undo"><i class="fas fa-undo-alt"></i></button>
                 
                 
                 
                 
-                <button id="finishTurn" class="commandButton">Finish Turn</button>
+                <button id="finishTurn" class="commandButton finishButton"><i class="fas fa-check"></i></button>
                 
                 <button id="throwMarker" class="commandButton">Throw Marker</button>
                 
@@ -82,8 +84,10 @@
             
 
             <div class="modeButtons">
-                <button id="zoomIn" class="modeButton zoomButton">+</button>
-                <button id="zoomOut" class="modeButton zoomButton">-</button>
+                <button id="zoomIn" class="modeButton zoomButton" data-toggle="tooltip" data-placement="top" title="Draw">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+                <button id="zoomOut" class="modeButton zoomButton"><i class="fas fa-search-minus"></i></button>
             </div>
             
             <div class="dropdown">
