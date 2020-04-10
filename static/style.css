@@ -162,6 +162,13 @@ body {
     margin-right:5px;
 }
 
+.isOp .chatMessageSender:after {
+    font-family: "Font Awesome 5 Free";
+    font-weight:900;
+    content:"\f505";
+    margin-left:5px;
+}
+
 .keyContainer{
     width:100px;
     padding:7px;

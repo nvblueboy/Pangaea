@@ -18,6 +18,11 @@ var gameName;
 var color; 
 
 
+//Debug variables
+var debug=false;
+var debugRect;
+
+
 
 function setCanvasSize() {
     //Lay out the canvas.
@@ -379,6 +384,10 @@ function createPlayerElement(player) {
         top.classList.add('activePlayer');
     }
 
+    if (player.op) {
+        top.classList.add('isOp');
+    }
+
     var sender = document.createElement('div');
     sender.classList.add('chatMessageSender');
 
@@ -449,11 +458,12 @@ canvas.on("path:created", function(o) {
 
 
 var createText = function(left,top) {
-    textObject = new fabric.IText('Your Rule Here', {
+    textObject = new fabric.IText(prompt("What is your rule?"), {
         fontFamily: 'arial black',
         left:left-150,
         top:top-50,
-        fill: color
+        fill: color,
+        textAlign:'center'
     });
     previousTextObject = JSON.parse(JSON.stringify(textObject));
     return textObject;
@@ -513,6 +523,7 @@ var zoomDelta = function(delta) {
     if (zoom > 1) zoom = 1;
     if (zoom < 0.2) zoom = 0.2;
     canvas.setZoom(zoom);
+    console.log(zoom);
 }
 
 canvas.on('mouse:wheel', function(opt) {
@@ -605,6 +616,7 @@ var setMode = function(selectedMode) {
         }
         
         lockObject(textObject, false);
+        canvas.setActiveObject(textObject);
         $("#modeText").addClass("active");
     } else if (selectedMode === "moving") {
         $("#modeMove").addClass("active");
@@ -617,13 +629,15 @@ var throwMarker = function(event) {
     var maxX;
     var minY;
     var maxY;
+
+    console.group("ThrowMarker Algorithm");
     
     //If there are objects, use the first one. If not, set a basic min+max.
     if (existingObjects.length >= 1) {
-        minX = existingObjects[0].oCoords.tl.x;
-        minY = existingObjects[0].oCoords.tl.y;
-        maxX = existingObjects[0].oCoords.br.x;
-        maxY = existingObjects[0].oCoords.br.y;
+        minX = existingObjects[0].left;
+        minY = existingObjects[0].top;
+        maxX = existingObjects[0].left +  existingObjects[0].width;
+        maxY = existingObjects[0].top +  existingObjects[0].height;
     } else {
         minX = 0;
         minY = 0;
@@ -631,31 +645,67 @@ var throwMarker = function(event) {
         maxY = 100;
     }
     for (var i = 0; i < existingObjects.length; ++i) {
+        console.log("Object: ");
+        console.log(existingObjects[i]);
         //Find the bounds of all existing objects.
+        var existing = existingObjects[i];
         var coords = existingObjects[i].oCoords;
-        if (coords.tl.x < minX) {
-            minX = coords.tl.x;
+        if (existing.left < minX) {
+            minX = existing.left;
         }
         
-        if (coords.tl.y < minY) {
-            minY = coords.tl.y;
+        if (existing.top < minY) {
+            minY = existing.top;
         }
         
-        if (coords.br.x > maxX) {
-            maxX = coords.br.x;
+        if (existing.left + existing.width > maxX) {
+            maxX = existing.left + existing.width;
         }
         
-        if (coords.br.y > maxY) {
-            maxY = coords.br.y;
+        if (existing.top + existing.height > maxY) {
+            maxY = existing.top + existing.height;
         }
         
     }
+
+    console.group("Min and Max Pre-Stripe");
+    console.log("MinX: "+minX);
+    console.log("MinY: "+minY);
+    console.log("MaxX: "+maxX);
+    console.log("MaxY: "+maxY);
+    console.groupEnd();
     
-    var stripe = 100; //A stripe of space around the board that playing could be allowed.
+    var stripe = 200; //A stripe of space around the board that playing could be allowed.
     minX = minX - stripe;
     minY = minY - stripe;
     maxX = maxX + stripe;
     maxY = maxY + stripe;
+
+    console.group("Min and Max Post-Stripe");
+    console.log("MinX: "+minX);
+    console.log("MinY: "+minY);
+    console.log("MaxX: "+maxX);
+    console.log("MaxY: "+maxY);
+    console.groupEnd();
+
+    if (debug) {
+        if (debugRect) {
+            //Get rid of the old one
+            canvas.remove(debugRect);
+        }
+
+        debugRect = new fabric.Rect({
+            left: minX,
+            top: minY,
+            fill: 'rgba(0,0,0,0)',
+            strokeWidth:5,
+            stroke: 'rgba(127,127,127,.5)',
+            width: maxX-minX,
+            height: maxY-minY
+        });
+
+        canvas.add(debugRect);
+    }
     
     var randomX = (Math.random() * (maxX - minX)) + minX;
     var randomY = (Math.random() * (maxY - minY)) + minY;
@@ -669,6 +719,8 @@ var throwMarker = function(event) {
     });
 
     moveCanvas(randomX, randomY);
+
+    console.groupEnd();
     
     
     
@@ -677,13 +729,13 @@ var throwMarker = function(event) {
 $("#throwMarker").click(throwMarker)
 
 var setMarker = function(x, y) {
-    if (markerObject != null) {
+    if (markerObject != null && !debug) {
         canvas.remove(markerObject);
     }
     
     markerObject = new fabric.Circle({
-        top : x - 10,
-        left : y - 10,
+        top : y - 10,
+        left : x - 10,
         radius: 20,
         fill: "#FF1A13",
         stroke: 'rgba(0,0,0,1)',
@@ -711,7 +763,7 @@ var finishTurn = function() {
     }
     
     if (newObjects.length > 0 && textObject != null) {
-        existingObjects.concat(newObjects);
+        existingObjects = existingObjects.concat(newObjects);
         lockObject(textObject,true);
         existingObjects.push(textObject);
         output.objects = newObjects.concat([textObject]);

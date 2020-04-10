@@ -39,7 +39,8 @@ var newGame = function(name, firstPlayer, socket) {
         players: [firstPlayer],
         sockets: [socket],
         data: [],
-        activePlayer : firstPlayer.id
+        activePlayer : firstPlayer.id,
+        ops : [firstPlayer.id]
     }
 }
 
@@ -84,6 +85,22 @@ var startNextTurn = function(game) {
     
 }
 
+var getPlayer = function(playerId) {
+    for (var gameName in games) {
+        var game = games[gameName];
+
+        for (var player in game.players) {
+            if (player.id == playerId) {
+                return player;
+            }
+        }
+    }
+}
+
+var opPlayer = function(game, playerId) {
+    game.ops.push(playerId);
+}
+
 var kickPlayer = function(game, player) {
     log(game, "User Leaving: "+player.id);
     
@@ -109,6 +126,16 @@ var kickPlayer = function(game, player) {
         for (var sock of game.sockets) {            
             data.nextPlayer = game.activePlayer;
             sock.emit('newMove', data);
+        }
+    }
+
+    if (game.ops.includes(player.id)) {
+        var index = game.ops.indexOf(player.id);
+        game.ops.splice(index,1);
+
+        if (game.ops.length == 0 && game.players.length > 1) {
+            //Set the first person post-kick as the op.
+            opPlayer(game, game.players[1].id);
         }
     }
     
@@ -222,6 +249,17 @@ io.on('connection', function(socket) {
             var command = data.message.split(' ');
             
             if (command[0] === '/skip') {
+                console.log(game.ops);
+                console.log(socket.id);
+
+                if (!(game.ops.includes(socket.id))) {
+                    socket.emit('message-down', {
+                        type:"turn",
+                        message:"You don't have permission to use that command."
+                    });
+
+                    return;
+                }
                 //if the command is "skip", then skip the current player.
                 
                 log(game, "Skipping.");
@@ -265,6 +303,7 @@ io.on('connection', function(socket) {
                 id:player.id,
                 color:player.color,
                 activePlayer:game.activePlayer ===player.id,
+                op:game.ops.includes(player.id)
             });
         }
 
