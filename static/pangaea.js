@@ -370,19 +370,51 @@ socket.on('responsePlayers', function(data) {
 
     $("#players").empty();
 
+    playerIsOp = false;
+    
+    for(var i = 0; i < data.length; ++i) {
+        if (data[i].id == playerId && data[i].op) {
+            playerIsOp = true;
+        }
+    }
+
     for (var i = 0; i < data.length; ++i) {
         var elem = createPlayerElement(data[i]);
         $("#players").append(elem);
+
+        $(".opPlayerButton").click(function(event) {
+            if (!confirm("Are you sure you want to op this player?")) {
+                return;
+            }
+            socket.emit('opPlayer', {
+                gameName: gameName,
+                playerId: event.target.id
+            });
+        });
+
+        $(".kickPlayerButton").click(function(event) {
+            if (!confirm("Are you sure you want to kick this player?")) {
+                return;
+            }
+            socket.emit('kickPlayer', {
+                gameName: gameName,
+                playerId: event.target.id
+            });
+        });
     }
 });
+
+var playerIsOp = false;
 
 function createPlayerElement(player) {
     var top = document.createElement('div');
     top.classList.add('chatMessage');
     top.classList.add('chatWindowRow');
+    top.classList.add('playerListRow');
     if (player.activePlayer) {
         top.classList.add('activePlayer');
     }
+
 
     if (player.op) {
         top.classList.add('isOp');
@@ -398,8 +430,48 @@ function createPlayerElement(player) {
     sender.append(document.createTextNode(player.name))
     top.append(sender);
 
+    if (playerIsOp) {
+        var opMenuContainer = document.createElement("div");
+        opMenuContainer.classList.add("dropleft");
+        var opMenu = document.createElement('button');
+        opMenu.classList.add('opMenu');
+        opMenu.classList.add('fas');
+        opMenu.classList.add('fa-ellipsis-v');
+        // opMenu.classList.add('dropdown-toggle');
+        opMenu.setAttribute('data-toggle','dropdown');
+        opMenu.id = player.id;
+        opMenuContainer.append(opMenu);
+        opMenuContainer.append(createBootstrapMenu(player));
+        top.append(opMenuContainer);
+    }
+
     return top;
 }
+
+function createBootstrapMenu(player) {
+    var container = document.createElement("div");
+    container.classList.add("dropdown-menu");
+
+    var opButton = document.createElement("a");
+    opButton.classList.add("opPlayerButton");
+    opButton.classList.add('dropdown-item');
+    opButton.id = player.id;
+    opButton.append(document.createTextNode('Op Player'));
+    container.append(opButton);
+
+    var kickButton = document.createElement("a");
+    kickButton.classList.add("kickPlayerButton");
+    kickButton.classList.add('dropdown-item');
+    kickButton.id = player.id;
+    kickButton.append(document.createTextNode('Kick Player'));
+    container.append(kickButton);
+
+    return container;
+
+}
+
+
+
 
 /////////////////////////////////////////
 //

@@ -169,6 +169,18 @@ body {
     margin-left:5px;
 }
 
+.playerListRow {
+    display: flex;
+    justify-content: space-between;
+}
+
+.opMenu {
+    padding: 5px;
+    padding-right: 10px;
+    background-color:rgba(0,0,0,0);
+    border:none;
+}
+
 .keyContainer{
     width:100px;
     padding:7px;

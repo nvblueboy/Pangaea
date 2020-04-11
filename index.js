@@ -162,6 +162,24 @@ var kickPlayer = function(game, player) {
     }
 }
 
+var sendPlayers = function(socket, data) {
+    var game = games[data.gameName];
+
+    var output = [];
+
+    for (var player of game.players) {
+        output.push({
+            name:player.name,
+            id:player.id,
+            color:player.color,
+            activePlayer:game.activePlayer ===player.id,
+            op:game.ops.includes(player.id)
+        });
+    }
+
+    socket.emit('responsePlayers', output);
+}
+
 io.on('connection', function(socket) {
     
     
@@ -292,22 +310,32 @@ io.on('connection', function(socket) {
         }
     });
 
-    socket.on('requestPlayers', function(data) {
+    socket.on('opPlayer', function(data) {
+        
+        
+        var game = games[data.gameName];
+        opPlayer(game, data.playerId);
+
+        
+
+        sendPlayers(socket, data);
+    });
+
+    socket.on('kickPlayer', function(data) {
+
         var game = games[data.gameName];
 
-        var output = [];
-
-        for (var player of game.players) {
-            output.push({
-                name:player.name,
-                id:player.id,
-                color:player.color,
-                activePlayer:game.activePlayer ===player.id,
-                op:game.ops.includes(player.id)
-            });
+        for (var i in game.players) {
+            if (game.players[i].id == data.playerId) {
+                kickPlayer(game, game.players[i]);
+            }
         }
+        
+        sendPlayers(socket, data);
+    });
 
-        socket.emit('responsePlayers', output);
+    socket.on('requestPlayers', function(data) {
+        sendPlayers(socket, data);
     });
     
     socket.on('leavingGame', function(data){
