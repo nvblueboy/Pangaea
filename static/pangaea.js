@@ -11,6 +11,7 @@ var playerList = [];
 //Operation Variables
 var stage = "waiting";
 var mode = "moving";
+var joinedGame = false;
 
 var playerId = 0;
 var playerName;
@@ -98,6 +99,8 @@ var joinGame = function(gameToJoin, newPlayerName) {
             color:color
         }
     });
+
+    joinedGame = true;
     
     //Set the input for sharing to the correct place.
     $("#shareText").val("http://"+window.location.hostname+'/?gameName='+gameName);
@@ -282,7 +285,7 @@ document.addEventListener('keypress', function(evt) {
     }
 
     //Space = throw marker
-    if (event.keyCode==32) {
+    if (event.keyCode==32 && joinedGame) {
         if (document.activeElement.id != 'chatInput' && $("#throwMarker").is(":visible") && !editingTextObject) {
             throwMarker();
             event.stopPropagation();

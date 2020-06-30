@@ -2,7 +2,7 @@
   "name": "pangaea-server",
   "version": "1.0.0",
   "description": "The server for online Pangaea.",
-  "main" : "index.js",
+  "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
