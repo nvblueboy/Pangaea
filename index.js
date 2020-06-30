@@ -88,16 +88,19 @@ var startNextTurn = function(game) {
 var getPlayer = function(playerId) {
     for (var gameName in games) {
         var game = games[gameName];
-
-        for (var player in game.players) {
+    
+        for (var player of game.players) {
             if (player.id == playerId) {
                 return player;
             }
         }
     }
+
+    return undefined;
 }
 
 var opPlayer = function(game, playerId) {
+    log(game, "Opping player "+playerId);
     game.ops.push(playerId);
 }
 
@@ -210,6 +213,7 @@ io.on('connection', function(socket) {
     
     socket.on('join game', function(data) {
         var game;
+
         if (!(data.gameName in games)) {
             //If the player enters a name of a game that isn't currently in progress, create a new one.
             game = newGame(data.gameName, data.player, socket);
@@ -261,14 +265,21 @@ io.on('connection', function(socket) {
     //Understand a message as it comes in from the user.
     socket.on('message-up', function(data) {
         var game = games[data.gameName];
+
+        //Log the sender's info.
+        var playerObj = getPlayer(socket.id);
+
+        if (playerObj) {
+            log(game, "[CHAT] " + playerObj.name + ": "+data.message);
+        } else {
+            log(game, "Couldn't find player at " + socket.id);
+        }
         
         //If it starts with a / then it is a command.
         if (data.message.startsWith('/')) {
             var command = data.message.split(' ');
             
             if (command[0] === '/skip') {
-                console.log(game.ops);
-                console.log(socket.id);
 
                 if (!(game.ops.includes(socket.id))) {
                     socket.emit('message-down', {
