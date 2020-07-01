@@ -203,6 +203,8 @@ io.on('connection', function(socket) {
             for (player of game.players) {
                 if (player.id == socket.Id) {
                     //This is the player. Kick 'em.
+                    //But first, let 'em know they're getting kicked (in case it's a random signal drop)
+                    socket.emit('kick', {reason:"disconnect"});
                     kickPlayer(game, player);
                     break;
                 }
@@ -345,6 +347,14 @@ io.on('connection', function(socket) {
 
         for (var i in game.players) {
             if (game.players[i].id == data.playerId) {
+                //Get the socket for the player and let them know they were kicked. Rude.
+                for (var socket of game.sockets) {
+                    if (socket.id == data.playerId) {
+                        socket.emit("kick", {reason:"opkick"});
+                    }
+                }
+
+
                 kickPlayer(game, game.players[i]);
             }
         }
@@ -360,6 +370,11 @@ io.on('connection', function(socket) {
         var game = games[data.name];
         
         if (game) {
+            for (var socket of game.sockets) {
+                if (socket.id == data.playerId) {
+                    socket.emit("kick", {reason:"disconnect"});
+                }
+            }
             kickPlayer(game, {name:data.playerName,id:data.playerId});            
         }
     });

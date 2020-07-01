@@ -475,6 +475,27 @@ function createBootstrapMenu(player) {
 
 
 
+/////////////////////////////////////////
+//
+//      Kick Message Code
+//
+/////////////////////////////////////////
+
+socket.on("kick", function(data) {
+    console.log("Kick signal reason: "+data.reason)
+    $("#disconnectModal").modal("show");
+
+    switch(data.reason) {
+        case "disconnect":
+            //Do the thing
+            $("#reasonDisconnect").show();
+            break;
+        case "opkick":
+            //You dun goofed
+            $("#reasonOpkick").show();
+            break;
+    }
+});
 
 /////////////////////////////////////////
 //
