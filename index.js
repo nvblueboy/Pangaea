@@ -147,12 +147,19 @@ var kickPlayer = function(game, player) {
     
     
     
-    var index = 0;
+    var index = -1;
     for (var i = 0; i < game.players.length; ++i) {
         if (game.players[i].id === player.id) {
             index = i;
             break;
         }
+    }
+
+    //Someone left, but had already disconnected so the loop didn't find em.
+    // Jump out before disaster strikes.
+    if (index == -1) {
+        log(game, "Didn't find player. They may have already left the game.");
+        return;
     }
     
     game.players.splice(index,1);
